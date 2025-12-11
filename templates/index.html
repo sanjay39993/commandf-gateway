@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Gateway - Secure Command Execution System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Command Gateway</h1>
+            <p class="subtitle">Secure command execution with rule-based access control</p>
+        </header>
+
+        <!-- Login Section -->
+        <div id="login-section" class="section">
+            <div class="card" style="max-width: 420px; margin: 0 auto;">
+                <h2>Authentication</h2>
+                <div class="form-group">
+                    <label for="api-key-input">API Key</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="password" id="api-key-input" placeholder="Enter your API key" style="flex: 1;">
+                        <button type="button" onclick="toggleApiKeyVisibility()" class="btn btn-secondary" style="padding: 8px 12px; min-width: 40px;">👁️</button>
+                    </div>
+                    <button onclick="login()" class="btn btn-primary" style="margin-top: 8px; width: 100%;">Sign In</button>
+                </div>
+                <p class="info">Don't have an API key? Contact your administrator.</p>
+            </div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="app-section" class="section" style="display: none;">
+            <!-- User Info -->
+            <div class="card user-info">
+                <div class="user-header">
+                    <div>
+                        <h2>Welcome, <span id="username"></span>!</h2>
+                        <p class="role-badge" id="role-badge"></p>
+                    </div>
+                    <div class="credits-display">
+                        <span class="credits-label">Credits:</span>
+                        <span class="credits-value" id="credits-value">0</span>
+                    </div>
+                </div>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('commands')">Commands</button>
+                <button class="tab-btn" onclick="showTab('history')">History</button>
+                <button class="tab-btn admin-only" onclick="showTab('approvals')" id="approvals-tab-btn" style="display: none;">Pending Approvals</button>
+                <button class="tab-btn admin-only" onclick="showTab('rules')" id="rules-tab-btn" style="display: none;">Rules</button>
+                <button class="tab-btn admin-only" onclick="showTab('users')" id="users-tab-btn" style="display: none;">Users</button>
+                <button class="tab-btn admin-only" onclick="showTab('audit')" id="audit-tab-btn" style="display: none;">Audit Logs</button>
+            </div>
+
+            <!-- Commands Tab -->
+            <div id="commands-tab" class="tab-content active">
+                <div class="card">
+                    <h2>Execute Command</h2>
+                    <div class="form-group">
+                        <label for="command-input">Command</label>
+                        <input type="text" id="command-input" placeholder="Enter command (e.g., ls -la, git status)" onkeypress="if(event.key === 'Enter') submitCommand()">
+                        <button onclick="submitCommand()" class="btn btn-primary" style="margin-top: 8px; width: 100%;">Execute</button>
+                    </div>
+                    <div id="command-result" class="result-box"></div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 style="margin: 0;">Command History</h2>
+                        <button onclick="loadHistory()" class="btn btn-secondary">Refresh</button>
+                    </div>
+                    <div id="history-list" class="history-list"></div>
+                </div>
+            </div>
+
+            <!-- Pending Approvals Tab (Admin Only) -->
+            <div id="approvals-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 style="margin: 0;">Pending Approvals</h2>
+                        <button onclick="loadPendingApprovals()" class="btn btn-secondary">Refresh</button>
+                    </div>
+                    <div id="approvals-list" class="approvals-list"></div>
+                </div>
+            </div>
+
+            <!-- Rules Tab (Admin Only) -->
+            <div id="rules-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                        <h2 style="margin: 0;">Security Rules</h2>
+                        <button onclick="showAddRuleModal()" class="btn btn-primary">Add Rule</button>
+                    </div>
+                    <div id="rules-list" class="rules-list"></div>
+                </div>
+            </div>
+
+            <!-- Users Tab (Admin Only) -->
+            <div id="users-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                        <h2 style="margin: 0;">User Management</h2>
+                        <button onclick="showAddUserModal()" class="btn btn-primary">Add User</button>
+                    </div>
+                    <div id="users-list" class="users-list"></div>
+                </div>
+            </div>
+
+            <!-- Audit Logs Tab (Admin Only) -->
+            <div id="audit-tab" class="tab-content">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 style="margin: 0;">Audit Logs</h2>
+                        <button onclick="loadAuditLogs()" class="btn btn-secondary">Refresh</button>
+                    </div>
+                    <div id="audit-logs-list" class="audit-logs-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Rule Modal -->
+    <div id="add-rule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('add-rule-modal')">&times;</span>
+            <h2>Add New Rule</h2>
+            <div class="form-group">
+                <label for="rule-pattern">Pattern (Regex):</label>
+                <input type="text" id="rule-pattern" placeholder="e.g., ^ls|cat" onblur="checkRuleConflict()">
+                <small>Enter a valid regular expression pattern</small>
+                <div id="rule-conflict-warning" style="display: none; color: #dc2626; margin-top: 4px; font-size: 0.75rem;"></div>
+            </div>
+            <div class="form-group">
+                <label for="rule-action">Action:</label>
+                <select id="rule-action" onchange="toggleApprovalFields()">
+                    <option value="AUTO_ACCEPT">Auto Accept</option>
+                    <option value="AUTO_REJECT">Auto Reject</option>
+                    <option value="REQUIRE_APPROVAL">Require Approval</option>
+                </select>
+            </div>
+            <div class="form-group" id="approval-threshold-group" style="display: none;">
+                <label for="rule-approval-threshold">Approval Threshold:</label>
+                <input type="number" id="rule-approval-threshold" value="1" min="1" max="10">
+                <small>Number of approvers needed</small>
+            </div>
+            <div class="form-group">
+                <label for="rule-description">Description:</label>
+                <input type="text" id="rule-description" placeholder="Optional description">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="rule-time-based" onchange="toggleTimeFields()"> Time-based rule
+                </label>
+            </div>
+            <div id="time-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="rule-time-start">Start Time (HH:MM):</label>
+                    <input type="text" id="rule-time-start" placeholder="09:00">
+                </div>
+                <div class="form-group">
+                    <label for="rule-time-end">End Time (HH:MM):</label>
+                    <input type="text" id="rule-time-end" placeholder="17:00">
+                </div>
+                <div class="form-group">
+                    <label for="rule-timezone">Timezone:</label>
+                    <input type="text" id="rule-timezone" value="UTC" placeholder="UTC">
+                </div>
+            </div>
+            <button onclick="addRule()" class="btn btn-primary">Create Rule</button>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="add-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('add-user-modal')">&times;</span>
+            <h2>Add New User</h2>
+            <div class="form-group">
+                <label for="user-username">Username:</label>
+                <input type="text" id="user-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="user-role">Role:</label>
+                <select id="user-role">
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="user-tier">Tier:</label>
+                <select id="user-tier">
+                    <option value="junior">Junior</option>
+                    <option value="mid">Mid</option>
+                    <option value="senior">Senior</option>
+                    <option value="lead">Lead</option>
+                </select>
+                <small>Affects approval thresholds (Junior: 3, Mid: 2, Senior/Lead: 1)</small>
+            </div>
+            <div class="form-group">
+                <label for="user-credits">Initial Credits:</label>
+                <input type="number" id="user-credits" value="100" min="0">
+            </div>
+            <div class="form-group">
+                <label for="user-email">Email (optional):</label>
+                <input type="email" id="user-email" placeholder="user@example.com">
+            </div>
+            <div class="form-group">
+                <label for="user-telegram">Telegram Chat ID (optional):</label>
+                <input type="text" id="user-telegram" placeholder="123456789">
+                <small>For approval notifications</small>
+            </div>
+            <button onclick="addUser()" class="btn btn-primary">Create User</button>
+            <div id="new-user-api-key" class="api-key-display" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+
